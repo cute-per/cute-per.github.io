@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>电子宠物 - 维克托</title>
+    <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: repeating-linear-gradient(
+                45deg,
+                #a6c8ff,
+                #a6c8ff 10px,
+                #b6d4ff 10px,
+                #b6d4ff 20px
+            );
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: row;
+            align-items: flex-start;
+            padding: 20px;
+        }
+
+        .pet-stats {
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            width: 200px;
+        }
+
+        .action-buttons button {
+            margin: 5px 0;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .action-buttons button:hover {
+            background-color: #e0e0e0;
+        }
+
+        .sub-buttons {
+            display: none;
+            flex-direction: column;
+            margin-left: 20px;
+        }
+
+        #pet-image {
+            width: 400px;
+            height: 400px;
+            margin-left: auto;
+            background-image: url('your_normal_image.gif');
+            background-size: cover;
+            position: relative;
+        }
+
+        @keyframes transformEffect {
+            0% {
+                transform: scale(1) rotate(0deg);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.5) rotate(180deg);
+                opacity: 0;
+            }
+            100% {
+                transform: scale(1) rotate(360deg);
+                opacity: 1;
+            }
+        }
+
+        @keyframes zoomIn {
+            from {
+                transform: scale(0);
+            }
+            to {
+                transform: scale(1);
+            }
+        }
+
+        .popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        }
+
+        #countdown {
+            display: none;
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+
+        #love-popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(255, 192, 203, 0.9);
+            padding: 50px;
+            border-radius: 50%;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            animation: zoomIn 0.5s;
+            font-size: 24px;
+        }
+
+        #game-over {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 10;
+            text-align: center;
+            color: white;
+            font-size: 36px;
+            padding-top: 20%;
+        }
+
+        #restart-button {
+            padding: 10px 20px;
+            font-size: 20px;
+            margin-top: 20px;
+        }
+
+        #feed-popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(255, 192, 203, 0.9);
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            font-size: 18px;
+        }
+
+        #intimate-popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(255, 192, 203, 0.9);
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            font-size: 18px;
+        }
+
+        #study-popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(255, 192, 203, 0.9);
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            font-size: 18px;
+        }
+
+        #music-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        #dialog-popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            max-width: 80%;
+            z-index: 11;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="left-section">
+        <div class="pet-stats">
+            <p>魔力值: <span id="magic">30</span></p>
+            <p>饱食度: <span id="hunger">30</span></p>
+            <p>亲密值: <span id="intimacy">30</span></p>
+        </div>
+        <div class="action-buttons" id="action-buttons">
+            <button onclick="toggleSubButtons('feed')">喂食</button>
+            <div id="feed-sub-buttons" class="sub-buttons">
+                <button onclick="feed('sandwich')">三明治</button>
+                <button onclick="feed('milk')">茴香牛奶</button>
+                <button onclick="feed('donut')">甜甜圈</button>
+            </div>
+            <button onclick="toggleSubButtons('study')">学习</button>
+            <div id="study-sub-buttons" class="sub-buttons">
+                <button onclick="study('magic')">学习魔法</button>
+                <button onclick="study('science')">科学研究</button>
+            </div>
+            <button onclick="toggleSubButtons('intimate')">娱乐</button>
+            <div id="intimate-sub-buttons" class="sub-buttons">
+                <button onclick="intimate('hug')">拥抱</button>
+                <button onclick="intimate('kiss')">亲吻</button>
+                <button onclick="intimate('stroke')">抚摸</button>
+            </div>
+            <button onclick="toggleSubButtons('companion')">陪伴</button>
+            <div id="companion-sub-buttons" class="sub-buttons">
+                <button onclick="startCompanion(60)">1分钟</button>
+                <button onclick="startCompanion(1800)">30分钟</button>
+                <button onclick="startCompanion(3600)">1小时</button>
+            </div>
+            <button onclick="restartGame()">删除存档</button>
+        </div>
+    </div>
+    <div id="pet-image">
+        <div id="countdown"></div>
+    </div>
+    <div id="popup" class="popup">该给维克托喂食了</div>
+    <div id="focus-popup" class="popup">正在专注哦~</div>
+    <div id="love-popup" class="popup">
+        <p id="love-message"></p>
+    </div>
+    <div id="game-over">
+        <p>游戏结束</p>
+        <button id="restart-button" onclick="restartGame()">重新开始</button>
+    </div>
+    <div id="feed-popup" class="popup"></div>
+    <div id="intimate-popup" class="popup"></div>
+    <div id="study-popup" class="popup"></div>
+    <i id="music-toggle" class="fa-solid fa-volume-high"></i>
+    <audio id="background-music" src="petmusic.mp3" loop></audio>
+    <div id="dialog-popup" class="popup">
+        <p>亲爱的杰斯：感谢这么长时间你对我的陪伴。还记得我们的初遇吗？当你把受伤的我带回家时，我想我就已经爱上你了。你给我的那些书里说，爱人的眼眸似星辰大海。但我却觉得星光的闪烁远不及你的千分之一。你是燃烧的烈阳，纵使灼烧我的内脏，我也要靠在你的身旁。你也是浩渺的海洋，就算巨浪拍碎我的脊梁，我也要躺在你的心上。用你的手攥紧我吧，我不是沙，不是水，我永远、永远不会离你而去，抱紧我吧，与我的血肉融合，我们永远、永远不会分离——   永远爱你的维克托。</p>
+    </div>
+
+    <script>
+        const savedState = localStorage.getItem('petState');
+        let {
+            magic,
+            hunger,
+            intimacy,
+            form,
+            foodCounts,
+            studyCounts,
+            intimateCounts,
+            lastActionTime,
+            isFocusing,
+            currentImage,
+            preFocusMagic,
+            preFocusHunger,
+            preFocusIntimacy,
+            firstOpenTime
+        } = savedState? JSON.parse(savedState) : {
+            magic: 30,
+            hunger: 30,
+            intimacy: 30,
+            form: 1,
+            foodCounts: { sandwich: 0, milk: 0, donut: 0 },
+            studyCounts: { magic: 0, science: 0 },
+            intimateCounts: { hug: 0, kiss: 0, stroke: 0, strange: 0 },
+            lastActionTime: { food: Date.now(), study: Date.now(), intimate: Date.now() },
+            isFocusing: false,
+            currentImage: null,
+            preFocusMagic: null,
+            preFocusHunger: null,
+            preFocusIntimacy: null,
+            firstOpenTime: Date.now()
+        };
+
+        // 计算从首次打开游戏到现在经过的小时数
+        const now = Date.now();
+        const hoursPassed = Math.floor((now - firstOpenTime) / 3600000);
+        magic = Math.max(0, magic - hoursPassed * 5);
+        hunger = Math.max(0, hunger - hoursPassed * 5);
+        intimacy = Math.max(0, intimacy - hoursPassed * 5);
+        firstOpenTime = now;
+
+        if (isFocusing) {
+            isFocusing = false;
+            if (preFocusMagic!== null && preFocusHunger!== null && preFocusIntimacy!== null) {
+                magic = preFocusMagic;
+                hunger = preFocusHunger;
+                intimacy = preFocusIntimacy;
+            }
+            const countdownElement = document.getElementById('countdown');
+            countdownElement.style.display = 'none';
+            const petImage = document.getElementById('pet-image');
+            petImage.style.animation = '';
+            petImage.style.backgroundImage = form === 1? 'url("your_normal_image.gif")' : 'url("your_second_form_normal_image.gif")';
+        }
+
+        // 检查是否过了一小时，若过了则重置计数
+        if (now - lastActionTime.food > 3600000) {
+            foodCounts = { sandwich: 0, milk: 0, donut: 0 };
+            lastActionTime.food = now;
+        }
+        if (now - lastActionTime.study > 3600000) {
+            studyCounts = { magic: 0, science: 0 };
+            lastActionTime.study = now;
+        }
+        if (now - lastActionTime.intimate > 3600000) {
+            if (form === 1) {
+                intimateCounts = { hug: 0, kiss: 0, stroke: 0 };
+            } else {
+                intimateCounts = { hug: 0, kiss: 0, strange: 0 };
+            }
+            lastActionTime.intimate = now;
+        }
+
+        const music = document.getElementById('background-music');
+        const musicToggle = document.getElementById('music-toggle');
+
+        musicToggle.addEventListener('click', () => {
+            if (music.paused) {
+                music.play();
+                musicToggle.classList.remove('fa-volume-xmark');
+                musicToggle.classList.add('fa-volume-high');
+            } else {
+                music.pause();
+                musicToggle.classList.remove('fa-volume-high');
+                musicToggle.classList.add('fa-volume-xmark');
+            }
+        });
+
+        window.addEventListener('beforeunload', () => {
+            music.pause();
+            localStorage.setItem('petState', JSON.stringify({
+                magic,
+                hunger,
+                intimacy,
+                form,
+                foodCounts,
+                studyCounts,
+                intimateCounts,
+                lastActionTime,
+                isFocusing,
+                currentImage,
+                preFocusMagic,
+                preFocusHunger,
+                preFocusIntimacy,
+                firstOpenTime
+            }));
+        });
+
+        function updateStats() {
+            magic = Math.min(magic, 100);
+            hunger = Math.min(hunger, 100);
+            intimacy = Math.min(intimacy, 100);
+
+            document.getElementById('magic').textContent = magic;
+            document.getElementById('hunger').textContent = hunger;
+            document.getElementById('intimacy').textContent = intimacy;
+            checkGameButtonVisibility();
+
+            if (magic === 100 && hunger === 100 && intimacy === 100) {
+                showDialogPopup();
+            }
+        }
+
+        function checkHunger() {
+            const popup = document.getElementById('popup');
+            if (hunger < 20) {
+                popup.style.display = 'block';
+            } else {
+                popup.style.display = 'none';
+            }
+            if (hunger < 1) {
+                document.getElementById('pet-image').style.backgroundImage = 'url("your_dead_image.png")';
+                document.getElementById('game-over').style.display = 'block';
+                const buttons = document.querySelectorAll('.action-buttons button');
+                buttons.forEach(button => button.disabled = true);
+            }
+        }
+
+        function feed(food) {
+            if (isFocusing) {
+                showFocusPopup();
+                return;
+            }
+            if (Date.now() - lastActionTime.food > 3600000) {
+                foodCounts = { sandwich: 0, milk: 0, donut: 0 };
+                lastActionTime.food = Date.now();
+            }
+            const feedPopup = document.getElementById('feed-popup');
+            if (foodCounts[food] < 4) {
+                switch (food) {
+                    case'sandwich':
+                        hunger += 3;
+                        showImageWithAnimation(form === 1? 'your_sandwich_image.png' : 'your_second_form_sandwich_image.png');
+                        if (form === 1) {
+                            feedPopup.textContent = '很健康，不是吗';
+                        } else {
+                            feedPopup.textContent = '双倍牛肉！嘿咻！o(*￣▽￣*)ブ';
+                        }
+                        break;
+                    case'milk':
+                        hunger += 2;
+                        showImageWithAnimation(form === 1? 'your_milk_image.png' : 'your_second_form_milk_image.png');
+                        if (form === 1) {
+                            feedPopup.textContent = '咕噜噜，美味的牛奶！';
+                        } else {
+                            feedPopup.textContent = '优雅，永不过时~';
+                        }
+                        break;
+                    case 'donut':
+                        hunger += 4;
+                        showImageWithAnimation(form === 1? 'your_donut_image.png' : 'your_second_form_donut_image.png');
+                        if (form === 1) {
+                            feedPopup.textContent = '美味的甜食，上面的糖粒是精华';
+                        } else {
+                            feedPopup.textContent = '谁会不喜欢吃甜食呢？~~~///(^v^)\\\~~~';
+                        }
+                        break;
+                }
+                foodCounts[food]++;
+            } else {
+                hunger -= 5;
+                showImageWithAnimation(form === 1? 'your_vomit_image.png' : 'your_second_form_vomit_image.png');
+                if (form === 1) {
+                    feedPopup.textContent = '已经吃不下啦！！！';
+                } else {
+                    feedPopup.textContent = '不要再喂啦QAQ';
+                }
+            }
+            feedPopup.style.display = 'block';
+            setTimeout(() => {
+                feedPopup.style.display = 'none';
+            }, 4000);
+            updateStats();
+            checkHunger();
+        }
+
+        function study(type) {
+            if (isFocusing) {
+                showFocusPopup();
+                return;
+            }
+            if (Date.now() - lastActionTime.study > 3600000) {
+                studyCounts = { magic: 0, science: 0 };
+                lastActionTime.study = Date.now();
+            }
+            const studyPopup = document.getElementById('study-popup');
+            if (studyCounts[type] < 4) {
+                magic += 5;
+                switch (type) {
+                    case'magic':
+                        showImageWithAnimation(form === 1? 'your_magic_study_image.png' : 'your_second_form_magic_study_image.png');
+                        if (form === 1) {
+                            studyPopup.textContent = '魔法~魔法~';
+                        } else {
+                            studyPopup.textContent = '加入光荣的进化吧！';
+                        }
+                        break;
+                    case'science':
+                        showImageWithAnimation(form === 1? 'your_science_study_image.png' : 'your_second_form_science_study_image.png');
+                        if (form === 1) {
+                            studyPopup.textContent = '小船~小船~';
+                        } else {
+                            studyPopup.textContent = '海克斯~海克斯~偷偷玩~';
+                        }
+                        break;
+                }
+                studyCounts[type]++;
+            } else {
+                if (form === 1) {
+                    studyPopup.textContent = '我好累哦......';
+                } else {
+                    studyPopup.textContent = '鱼也需要休息呀ε=( o｀ω′)ノ';
+                }
+                showImageWithAnimation(form === 1? 'your_dislike_study_image.png' : 'your_second_form_dislike_study_image.png');
+            }
+            studyPopup.style.display = 'block';
+            setTimeout(() => {
+                studyPopup.style.display = 'none';
+            }, 4000);
+            updateStats();
+            if (magic >= 70 && form === 1) {
+                transformToSecondForm();
+            } else if (magic < 70 && form === 2) {
+                transformToFirstForm();
+            }
+        }
+
+        function intimate(type) {
+            if (isFocusing) {
+                showFocusPopup();
+                return;
+            }
+            if (Date.now() - lastActionTime.intimate > 3600000) {
+                if (form === 1) {
+                    intimateCounts = { hug: 0, kiss: 0, stroke: 0 };
+                } else {
+                    intimateCounts = { hug: 0, kiss: 0, strange: 0 };
+                }
+                lastActionTime.intimate = Date.now();
+            }
+            const intimatePopup = document.getElementById('intimate-popup');
+            if ((form === 1 && ['hug', 'kiss', 'stroke'].includes(type) && intimateCounts[type] < 4) ||
+                (form === 2 && ['hug', 'kiss', 'strange'].includes(type) && intimateCounts[type] < 4)) {
+                if (form === 1) {
+                    switch (type) {
+                        case 'hug':
+                        case 'stroke':
+                            intimacy += 2;
+                            break;
+                        case 'kiss':
+                            intimacy += 3;
+                            break;
+                    }
+                    switch (type) {
+                        case 'hug':
+                            showImageWithAnimation('your_hug_image.png');
+                            intimatePopup.textContent = '很温暖哦';
+                            break;
+                        case 'kiss':
+                            showImageWithAnimation('your_kiss_image.png');
+                            intimatePopup.textContent = '啾~';
+                            break;
+                        case 'stroke':
+                            showImageWithAnimation('your_stroke_image.png');
+                            intimatePopup.textContent = '呼噜呼噜呼噜';
+                            break;
+                    }
+                } else {
+                    switch (type) {
+                        case 'hug':
+                        case 'kiss':
+                            intimacy += 2;
+                            break;
+                        case'strange':
+                            intimacy += 4;
+                            break;
+                    }
+                    switch (type) {
+                        case 'hug':
+                            showImageWithAnimation('your_second_form_hug_image.png');
+                            intimatePopup.textContent = '太大力啦';
+                            break;
+                        case 'kiss':
+                            showImageWithAnimation('your_second_form_kiss_image.png');
+                            intimatePopup.textContent = '啵啵！';
+                            break;
+                        case'strange':
+                            showImageWithAnimation('your_second_form_strange_image.png');
+                            intimatePopup.textContent = '羞羞！！';
+                            break;
+                    }
+                }
+                intimateCounts[type]++;
+            } else {
+                if (form === 1) {
+                    intimatePopup.textContent = '羞死人啦！！！坏杰斯！！';
+                } else {
+                    intimatePopup.textContent = '我不要啦！！！坏杰斯！！';
+                }
+                showImageWithAnimation(form === 1? 'your_dislike_intimate_image.png' : 'your_second_form_dislike_intimate_image.png');
+            }
+            intimatePopup.style.display = 'block';
+            setTimeout(() => {
+                intimatePopup.style.display = 'none';
+            }, 4000);
+            updateStats();
+        }
+
+        function showImageWithAnimation(imageUrl) {
+            const petImage = document.getElementById('pet-image');
+            petImage.style.animation = 'zoomIn 2s';
+            petImage.style.backgroundImage = `url("${imageUrl}")`;
+            currentImage = imageUrl;
+            if (!isFocusing) {
+                setTimeout(() => {
+                    petImage.style.animation = '';
+                    petImage.style.backgroundImage = form === 1? 'url("your_normal_image.gif")' : 'url("your_second_form_normal_image.gif")';
+                }, 6000);
+            }
+        }
+
+        function transformToSecondForm() {
+            const petImage = document.getElementById('pet-image');
+            petImage.style.animation = 'transformEffect 2s';
+            form = 2;
+            const intimateSubButtons = document.getElementById('intimate-sub-buttons');
+            intimateSubButtons.innerHTML = `
+                <button onclick="intimate('hug')">拥抱</button>
+                <button onclick="intimate('kiss')">亲吻</button>
+                <button onclick="intimate('strange')">奇怪</button>
+            `;
+            setTimeout(() => {
+                petImage.style.animation = '';
+                petImage.style.backgroundImage = 'url("your_second_form_normal_image.gif")';
+            }, 2000);
+            updateStats();
+        }
+
+        function transformToFirstForm() {
+            const petImage = document.getElementById('pet-image');
+            petImage.style.animation = 'transformEffect 2s';
+            form = 1;
+            const intimateSubButtons = document.getElementById('intimate-sub-buttons');
+            intimateSubButtons.innerHTML = `
+                <button onclick="intimate('hug')">拥抱</button>
+                <button onclick="intimate('kiss')">亲吻</button>
+                <button onclick="intimate('stroke')">抚摸</button>
+            `;
+            setTimeout(() => {
+                petImage.style.animation = '';
+                petImage.style.backgroundImage = 'url("your_normal_image.gif")';
+            }, 2000);
+            updateStats();
+        }
+
+        function toggleSubButtons(buttonType) {
+            const subButtons = document.getElementById(`${buttonType}-sub-buttons`);
+            subButtons.style.display = subButtons.style.display === 'flex'? 'none' : 'flex';
+        }
+
+        function startCompanion(seconds) {
+            if (isFocusing) {
+                showFocusPopup();
+                return;
+            }
+            preFocusMagic = magic;
+            preFocusHunger = hunger;
+            preFocusIntimacy = intimacy;
+            isFocusing = true;
+            const countdownElement = document.getElementById('countdown');
+            countdownElement.style.display = 'block';
+            let timeLeft = seconds;
+            const countdownInterval = setInterval(() => {
+                timeLeft--;
+                countdownElement.textContent = `倒计时: ${timeLeft} 秒`;
+                if (timeLeft === 0) {
+                    clearInterval(countdownInterval);
+                    countdownElement.style.display = 'none';
+                    isFocusing = false;
+                    preFocusMagic = null;
+                    preFocusHunger = null;
+                    preFocusIntimacy = null;
+                    const petImage = document.getElementById('pet-image');
+                    petImage.style.animation = '';
+                    petImage.style.backgroundImage = form === 1? 'url("your_normal_image.gif")' : 'url("your_second_form_normal_image.gif")';
+                    showLovePopup();
+                    let increaseValue;
+                    if (seconds === 60) {
+                        increaseValue = 1;
+                    } else if (seconds === 1800) {
+                        increaseValue = 3;
+                    } else if (seconds === 3600) {
+                        increaseValue = 5;
+                    }
+                    magic += increaseValue;
+                    intimacy += increaseValue;
+                    updateStats();
+                }
+            }, 1000);
+            showImageWithAnimation(form === 1? 'your_first_form_companion_image.png' : 'your_second_form_companion_image.png');
+        }
+
+        function showFocusPopup() {
+            const focusPopup = document.getElementById('focus-popup');
+            focusPopup.style.display = 'block';
+            setTimeout(() => {
+                focusPopup.style.display = 'none';
+            }, 2000);
+        }
+
+        function showLovePopup() {
+            const lovePopup = document.getElementById('love-popup');
+            const loveMessage = document.getElementById('love-message');
+            if (form === 1) {
+                loveMessage.textContent = '感谢你的陪伴，杰斯。';
+            } else {
+                loveMessage.textContent = '我永远爱你，杰斯。';
+            }
+            lovePopup.style.display = 'block';
+            setTimeout(() => {
+                lovePopup.style.display = 'none';
+            }, 10000);
+        }
+
+        function restartGame() {
+            magic = 30;
+            hunger = 30;
+            intimacy = 30;
+            form = 1;
+            foodCounts = { sandwich: 0, milk: 0, donut: 0 };
+            studyCounts = { magic: 0, science: 0 };
+            intimateCounts = { hug: 0, kiss: 0, stroke: 0, strange: 0 };
+            lastActionTime = { food: Date.now(), study: Date.now(), intimate: Date.now() };
+            isFocusing = false;
+            currentImage = null;
+            preFocusMagic = null;
+            preFocusHunger = null;
+            preFocusIntimacy = null;
+            firstOpenTime = Date.now();
+            document.getElementById('game-over').style.display = 'none';
+            document.getElementById('pet-image').style.backgroundImage = 'url("your_normal_image.gif")';
+            const buttons = document.querySelectorAll('.action-buttons button');
+            buttons.forEach(button => button.disabled = false);
+            const intimateSubButtons = document.getElementById('intimate-sub-buttons');
+            intimateSubButtons.innerHTML = `
+                <button onclick="intimate('hug')">拥抱</button>
+                <button onclick="intimate('kiss')">亲吻</button>
+                <button onclick="intimate('stroke')">抚摸</button>
+            `;
+            updateStats();
+            checkHunger();
+            localStorage.removeItem('petState');
+        }
+
+        function checkGameButtonVisibility() {
+            const actionButtons = document.getElementById('action-buttons');
+            const gameButton1 = document.querySelector('#action-buttons button[data-game1]');
+            const gameButton2 = document.querySelector('#action-buttons button[data-game2]');
+            if (form === 2 && intimacy > 55) {
+                if (!gameButton1) {
+                    const newButton1 = document.createElement('button');
+                    newButton1.textContent = '游戏一：海克斯矿工';
+                    newButton1.dataset.game1 = true;
+                    newButton1.onclick = () => {
+                        music.pause();
+                        localStorage.setItem('petState', JSON.stringify({
+                            magic,
+                            hunger,
+                            intimacy,
+                            form,
+                            foodCounts,
+                            studyCounts,
+                            intimateCounts,
+                            lastActionTime,
+                            isFocusing,
+                            currentImage,
+                            preFocusMagic,
+                            preFocusHunger,
+                            preFocusIntimacy,
+                            firstOpenTime
+                        }));
+                        window.location.href = 'miner_game.html';
+                    };
+                    actionButtons.appendChild(newButton1);
+                }
+                if (!gameButton2 && intimacy > 70) {
+                    const newButton2 = document.createElement('button');
+                    newButton2.textContent = '游戏二：小推理';
+                    newButton2.dataset.game2 = true;
+                    newButton2.onclick = () => {
+                        music.pause();
+                        localStorage.setItem('petState', JSON.stringify({
+                            magic,
+                            hunger,
+                            intimacy,
+                            form,
+                            foodCounts,
+                            studyCounts,
+                            intimateCounts,
+                            lastActionTime,
+                            isFocusing,
+                            currentImage,
+                            preFocusMagic,
+                            preFocusHunger,
+                            preFocusIntimacy,
+                            firstOpenTime
+                        }));
+                        window.location.href = 'puzzle_game.html';
+                    };
+                    actionButtons.appendChild(newButton2);
+                }
+            } else {
+                if (gameButton1) {
+                    gameButton1.remove();
+                }
+                if (gameButton2) {
+                    gameButton2.remove();
+                }
+            }
+        }
+
+        function showDialogPopup() {
+            const dialogPopup = document.getElementById('dialog-popup');
+            dialogPopup.style.display = 'block';
+            setTimeout(() => {
+                dialogPopup.style.display = 'none';
+            }, 30000);
+        }
+
+        // 每小时减少属性值
+        setInterval(() => {
+            magic = Math.max(0, magic - 5);
+            hunger = Math.max(0, hunger - 5);
+            intimacy = Math.max(0, intimacy - 5);
+            updateStats();
+            checkHunger();
+            if (magic < 70 && form === 2) {
+                transformToFirstForm();
+            }
+        }, 3600000);
+
+        updateStats();
+        checkHunger();
+
+        if (form === 2) {
+            const petImage = document.getElementById('pet-image');
+            petImage.style.backgroundImage = 'url("your_second_form_normal_image.gif")';
+            const intimateSubButtons = document.getElementById('intimate-sub-buttons');
+            intimateSubButtons.innerHTML = `
+                <button onclick="intimate('hug')">拥抱</button>
+                <button onclick="intimate('kiss')">亲吻</button>
+                <button onclick="intimate('strange')">奇怪</button>
+            `;
+        }
+    </script>
+</body>
+
+</html>    

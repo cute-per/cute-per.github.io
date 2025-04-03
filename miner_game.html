@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>黄金矿工双人竞技版</title>
+    <style>
+        canvas {
+            border: 2px solid #000;
+            background: #87CEEB;
+        }
+
+        .game-info {
+            font-size: 24px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        #restart {
+            display: none;
+            margin: 20px auto;
+            padding: 10px 20px;
+            font-size: 18px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- 添加音乐元素 -->
+    <audio id="backgroundMusic" loop>
+        <source src="background.mp3" type="audio/mpeg">
+        <source src="background.ogg" type="audio/ogg">
+        Your browser does not support the audio element.
+    </audio>
+    <audio id="catchSound">
+        <source src="catch.mp3" type="audio/mpeg">
+        <source src="catch.ogg" type="audio/ogg">
+        Your browser does not support the audio element.
+    </audio>
+
+    <div class="game-info">
+        <span>时间：<span id="timer">60</span>秒</span>
+        <span style="margin: 0 50px;">玩家J：<span id="scoreJ">0</span>金币</span>
+        <span>玩家V：<span id="scoreV">0</span>金币</span>
+    </div>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <button id="restart">重新开始</button>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // 获取音乐元素
+        const bgMusic = document.getElementById('backgroundMusic');
+        const catchSound = document.getElementById('catchSound');
+
+        // 处理自动播放限制
+        let audioPlayed = false;
+        function playAudio() {
+            if (!audioPlayed) {
+                bgMusic.play().catch(() => {
+                    console.log('自动播放背景音乐失败，等待用户交互');
+                });
+                audioPlayed = true;
+            }
+        }
+
+        window.addEventListener('keydown', playAudio);
+        document.getElementById('restart').addEventListener('click', playAudio);
+
+        // 监听音频加载错误
+        bgMusic.addEventListener('error', () => {
+            console.log('背景音乐加载失败');
+        });
+        catchSound.addEventListener('error', () => {
+            console.log('捕获音效加载失败');
+        });
+
+        // 加载图片资源
+        const assets = {
+            players: [new Image(), new Image()],
+            ores: {
+                gold: [new Image(), new Image()],
+                stone: [new Image(), new Image()]
+            }
+        };
+
+        // 设置图片路径
+        assets.players[0].src = 'playerJ.png';
+        assets.players[1].src = 'playerV.png';
+        assets.ores.gold[0].src = 'gold_small.png';
+        assets.ores.gold[1].src = 'gold_large.png';
+        assets.ores.stone[0].src = 'stone_small.png';
+        assets.ores.stone[1].src = 'stone_large.png';
+
+        // 游戏配置
+        const CONFIG = {
+            hookSpeed: 8,
+            hookMaxLength: 500,
+            playerY: 100,
+            miningArea: { minY: 200, maxY: 550 },
+            gameDuration: 60
+        };
+
+        // 游戏状态
+        let game = {
+            players: [
+                { x: 300, y: CONFIG.playerY, score: 0, angle: Math.PI / 2, hook: null, scoreFloats: [] },
+                { x: 500, y: CONFIG.playerY, score: 0, angle: Math.PI / 2, hook: null, scoreFloats: [] }
+            ],
+            ores: [],
+            timer: CONFIG.gameDuration,
+            running: true
+        };
+
+        class Hook {
+            constructor(player) {
+                this.player = player;
+                this.length = 0;
+                this.speed = CONFIG.hookSpeed;
+                this.maxLength = CONFIG.hookMaxLength;
+                this.retracting = false;
+                this.catched = null;
+            }
+
+            update() {
+                const speedModifier = this.catched ? this.catched.speedModifier : 0;
+                const currentSpeed = this.speed * (1 - speedModifier);
+
+                if (!this.retracting) {
+                    this.length += currentSpeed;
+                    if (this.length >= this.maxLength) this.retracting = true;
+                } else {
+                    this.length -= currentSpeed;
+                    if (this.length <= 0) return false;
+                }
+                return true;
+            }
+        }
+
+        function generateOres() {
+            const oreTypes = [
+                {
+                    type: 'gold',
+                    sizes: [
+                        { value: 50, size: 40, speedModifier: 0.3 },
+                        { value: 100, size: 60, speedModifier: 0.7 }
+                    ]
+                },
+                {
+                    type: 'stone',
+                    sizes: [
+                        { value: 20, size: 40, speedModifier: 0.2 },
+                        { value: 40, size: 60, speedModifier: 0.6 }
+                    ]
+                }
+            ];
+
+            for (let i = 0; i < 20; i++) {
+                const type = oreTypes[Math.random() > 0.3 ? 0 : 1];
+                const size = type.sizes[Math.random() > 0.6 ? 1 : 0];
+
+                game.ores.push({
+                    x: Math.random() * 600 + 100,
+                    y: Math.random() * (CONFIG.miningArea.maxY - CONFIG.miningArea.minY) + CONFIG.miningArea.minY,
+                    type: type.type,
+                    img: assets.ores[type.type][type.sizes.indexOf(size)],
+                    ...size
+                });
+            }
+        }
+
+        let lastTime = 0;
+        function gameLoop(timestamp) {
+            if (!game.running) return;
+
+            const deltaTime = (timestamp - lastTime) / 1000;
+            lastTime = timestamp;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            game.timer -= deltaTime;
+            document.getElementById('timer').textContent = Math.ceil(game.timer);
+
+            if (game.timer <= 0) {
+                game.running = false;
+                showGameResult();
+                bgMusic.pause();
+                return;
+            }
+
+            game.players.forEach((player, index) => {
+                ctx.save();
+                ctx.translate(player.x, player.y);
+                ctx.rotate(player.angle - Math.PI / 2);
+                ctx.drawImage(assets.players[index], -25, -25, 50, 50);
+                ctx.restore();
+
+                player.scoreFloats = player.scoreFloats.filter(f => {
+                    f.y -= 1;
+                    f.alpha -= 0.02;
+                    return f.alpha > 0;
+                });
+
+                if (player.hook) {
+                    const isHookActive = player.hook.update();
+                    const dx = Math.cos(player.angle) * player.hook.length;
+                    const dy = Math.sin(player.angle) * player.hook.length;
+
+                    if (isHookActive && !player.hook.retracting) {
+                        game.ores.forEach((ore, i) => {
+                            const distance = Math.hypot(
+                                (player.x + dx) - ore.x,
+                                (player.y + dy) - ore.y
+                            );
+                            if (distance < ore.size / 2) {
+                                player.hook.retracting = true;
+                                player.hook.catched = ore;
+                                game.ores.splice(i, 1);
+                                player.scoreFloats.push({
+                                    value: '+' + ore.value,
+                                    y: 0,
+                                    alpha: 1
+                                });
+                                // 播放捕获音效
+                                catchSound.currentTime = 0;
+                                catchSound.play().catch(() => {
+                                    console.log('捕获音效播放失败');
+                                });
+                            }
+                        });
+                    }
+
+                    ctx.beginPath();
+                    ctx.moveTo(player.x, player.y);
+                    ctx.lineTo(player.x + dx, player.y + dy);
+                    ctx.strokeStyle = '#333';
+                    ctx.lineWidth = 3;
+                    ctx.stroke();
+
+                    if (player.hook.catched) {
+                        const ore = player.hook.catched;
+                        ctx.drawImage(
+                            ore.img,
+                            player.x + dx - ore.size / 2,
+                            player.y + dy - ore.size / 2,
+                            ore.size,
+                            ore.size
+                        );
+
+                        if (player.hook.length <= 0) {
+                            player.score += ore.value;
+                            document.getElementById(`score${index === 0 ? 'J' : 'V'}`).textContent = player.score;
+                        }
+                    }
+
+                    if (!isHookActive) {
+                        player.hook = null;
+                    }
+                }
+
+                player.scoreFloats.forEach(f => {
+                    ctx.fillStyle = `rgba(255, 215, 0,${f.alpha})`;
+                    ctx.font = '20px Arial';
+                    ctx.fillText(f.value, player.x - 20, player.y - 40 + f.y);
+                });
+            });
+
+            game.ores.forEach(ore => {
+                ctx.drawImage(
+                    ore.img,
+                    ore.x - ore.size / 2,
+                    ore.y - ore.size / 2,
+                    ore.size,
+                    ore.size
+                );
+            });
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        function showGameResult() {
+            let result = '';
+            if (game.players[0].score > game.players[1].score) {
+                result = '玩家J获胜！';
+            } else if (game.players[1].score > game.players[0].score) {
+                result = '玩家V获胜！';
+            } else {
+                result = '平局！';
+            }
+
+            ctx.fillStyle = '#FF0000';
+            ctx.font = '48px Arial';
+            ctx.fillText(result, canvas.width / 2 - 100, canvas.height / 2);
+            document.getElementById('restart').style.display = 'block';
+        }
+
+        // 修改后的键盘控制（方向键反转）
+        const keyActions = {
+            ArrowLeft: () => game.players[0].angle += 0.03,  // 左键增加角度（向右转）
+            ArrowRight: () => game.players[0].angle -= 0.03, // 右键减少角度（向左转）
+            ArrowDown: () => game.players[0].hook || (game.players[0].hook = new Hook(game.players[0])),
+            KeyA: () => game.players[1].angle += 0.03,
+            KeyD: () => game.players[1].angle -= 0.03,
+            KeyS: () => game.players[1].hook || (game.players[1].hook = new Hook(game.players[1]))
+        };
+
+        window.addEventListener('keydown', (e) => keyActions[e.code]?.());
+
+        document.getElementById('restart').addEventListener('click', () => {
+            game = {
+                players: [
+                    { x: 300, y: CONFIG.playerY, score: 0, angle: Math.PI / 2, hook: null, scoreFloats: [] },
+                    { x: 500, y: CONFIG.playerY, score: 0, angle: Math.PI / 2, hook: null, scoreFloats: [] }
+                ],
+                ores: [],
+                timer: CONFIG.gameDuration,
+                running: true
+            };
+            document.getElementById('scoreJ').textContent = '0';
+            document.getElementById('scoreV').textContent = '0';
+            document.getElementById('restart').style.display = 'none';
+            generateOres();
+            bgMusic.currentTime = 0;
+            bgMusic.play().catch(() => {
+                console.log('重新开始时背景音乐播放失败');
+            });
+            requestAnimationFrame(gameLoop);
+        });
+
+        // 初始化游戏
+        generateOres();
+        requestAnimationFrame(gameLoop);
+    </script>
+</body>
+
+</html>
+    

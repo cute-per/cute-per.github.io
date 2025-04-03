@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
+    <title>问答游戏</title>
+    <style>
+        /* 弹窗样式 */
+      .popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        /* 淡入动画 */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+        }
+
+        /* 按钮悬停效果 */
+        button {
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+        }
+
+        /* 输入框样式 */
+        input[type="text"] {
+            transition: border-color 0.3s ease;
+        }
+
+        input[type="text"]:focus {
+            border-color: #3b82f6;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 font-sans">
+    <!-- 背景音乐 -->
+    <audio id="background-music" src="storymusic.mp3" loop></audio>
+    <!-- 主菜单 -->
+    <div id="main-menu" class="container mx-auto p-8 text-center">
+        <h1 class="text-4xl font-bold text-gray-800 mb-6">来和维克托一起玩游戏吧</h1>
+        <p class="text-lg text-gray-600 mb-8">请根据谜面和问题，在回答框里输入答案。答案为纯字母，字母均为小写。游戏内容和灵感来源：小红书博主：谜语人和菠萝探长</p>
+        <button id="start-game" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded shadow-md">开始游戏</button>
+    </div>
+    <!-- 关卡一 -->
+    <div id="level-1" class="container mx-auto p-8 hidden">
+        <a href="#main-menu" class="text-blue-500 hover:underline hover:text-blue-600"><i class="fa-solid fa-arrow-left mr-2"></i>返回</a>
+        <h2 class="text-3xl font-bold text-gray-800 mb-6">关卡一</h2>
+        <p class="text-lg text-gray-600 mb-4">谜面：某市郊外某有主荒地挖出多具无名男尸，年龄最小15岁，最大25岁，去世时间前后有7年的时间差。死状各异，有的身上有外伤，有的关节有骨折，有的被分尸，最新发现的死者有死后被侵害迹象。</p>
+        <p class="text-lg text-gray-600 mb-4">问题：请就此案选择有可能的犯罪嫌疑人特征:A、男性 B、女性 C、首次作案尙年轻 D、首次作案已上年纪 F、比较富有 E、比较贫困 G、不修边幅魅力1、喜欢异性 H、内敛且有 G、喜欢同性 K、喜欢掌控感 L、幼年有心理创伤 M、家庭缺失 N、有强迫症</p>
+        <input type="text" id="answer-1" class="border border-gray-300 p-3 mb-4 rounded w-full" placeholder="输入答案">
+        <button id="submit-1" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded shadow-md">提交答案</button>
+        <div id="popup-1" class="popup">
+            <p id="popup-message-1" class="text-lg text-gray-800"></p>
+        </div>
+        <div id="answer-reveal-1" class="hidden mt-8">
+            <p class="text-lg text-gray-600">答案揭晓：凶手为男性，是个外表儒雅随和中年人。父母有掌控欲，家庭作风严谨。少年时发现自己喜欢同性，表达过但被拒绝，并被大肆宣传造成创伤再加上社会环境对txl的不认同以及父母的严厉让他对自己的行幻想进行了压抑，没有得到正确引导。成年后谈过几次恋爱但失败而终，逐渐认为不动的对象让他可以拥有完全的支配感，于是渐渐转变为恋尸癖。被害人的选择随着凶手的年龄而增长，死状各异的尸体意味着他对处理厅体很随性不在意。少年时家境贫困，成年后靠自己致富，买了无人问津的荒地专门埋尸体，至于如何控制被害人没有特定逻辑，有诱骗，有背地下黑手，有的甚至还谈过一段时间感情。</p>
+            <button id="next-level-1" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded shadow-md mt-6">下一关</button>
+        </div>
+    </div>
+    <!-- 关卡二 -->
+    <div id="level-2" class="container mx-auto p-8 hidden">
+        <a href="#main-menu" class="text-blue-500 hover:underline hover:text-blue-600"><i class="fa-solid fa-arrow-left mr-2"></i>返回</a>
+        <h2 class="text-3xl font-bold text-gray-800 mb-6">关卡二</h2>
+        <p class="text-lg text-gray-600 mb-4">谜面：一年轻男子被发现死于某女性单身公寓内，脖子上有环状勒痕，手腕处有捆绑痕迹，身体上有多处淤青，不远处有一个便携电击器，检测出两人指纹，均不属于死者。公寓门上有鞋印，门锁没有破坏痕迹</p>
+        <p class="text-lg text-gray-600 mb-4">问题：请就此案件选择有可能的犯罪嫌疑人特征:a、男性b、女性b、熟人作案 d、生人作案e、激情作案 f、蓄意预谋9、情感纠葛 h、入室抢劫</p>
+        <input type="text" id="answer-2" class="border border-gray-300 p-3 mb-4 rounded w-full" placeholder="输入答案">
+        <button id="submit-2" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded shadow-md">提交答案</button>
+        <div id="popup-2" class="popup">
+            <p id="popup-message-2" class="text-lg text-gray-800"></p>
+        </div>
+        <div id="answer-reveal-2" class="hidden mt-8">
+            <p class="text-lg text-gray-600">答案揭晓：凶手为一名女姓。死者与公寓主人有情感纠葛不欢而散，死者多次上门寻衅，公寓主人因此常备电击器以自保。门上有鞋印，为男主暴力踹门所留，公寓主人不得已开门。死者要对女子实行暴力，女子电击自保，并将其捆住。但后男子突然苏醒挣扎威胁女子，女子情急之下电击男子，并绳子将其勒住，不慎勒死，因此造成死者身上多处淤青和脖颈的环状勒痕。电击器的另一指纹是公寓主人朋友的，是此朋友送给她自保的。</p>
+            <button id="next-level-2" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded shadow-md mt-6">下一关</button>
+        </div>
+    </div>
+    <!-- 关卡三 -->
+    <div id="level-3" class="container mx-auto p-8 hidden">
+        <a href="#main-menu" class="text-blue-500 hover:underline hover:text-blue-600"><i class="fa-solid fa-arrow-left mr-2"></i>返回</a>
+        <h2 class="text-3xl font-bold text-gray-800 mb-6">关卡三</h2>
+        <p class="text-lg text-gray-600 mb-4">谜面：7岁女孩被发现死于社区公园角落，颈部有轻微窒息痕迹，身旁散落一个破损的布偶熊。尸检显示死者有严重花生过敏反应，右手紧攥着半颗酒心巧克力。公园长椅下发现一支儿童用哮喘吸入器，检测出两种药物成分（常规哮喘药与花生蛋白粉）。监控显示死者最后被拍到与一穿连帽衫人影走向案发地。</p>
+        <p class="text-lg text-gray-600 mb-4">问题：请选择可能的犯罪嫌疑人特征：a、成年男性 b、成年女性 c、熟人作案 d、随机作案 e、冲动行为 f、精密预谋 g、家庭矛盾 h、报复社会</p>
+        <input type="text" id="answer-3" class="border border-gray-300 p-3 mb-4 rounded w-full" placeholder="输入答案">
+        <button id="submit-3" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded shadow-md">提交答案</button>
+        <div id="popup-3" class="popup">
+            <p id="popup-message-3" class="text-lg text-gray-800"></p>
+        </div>
+        <div id="answer-reveal-3" class="hidden mt-8">
+            <p class="text-lg text-gray-600">答案揭晓：凶手为女孩继母。因丈夫将大量遗产指定给亲生女儿，继母暗中将死者哮喘吸入器混入花生蛋白粉（g家庭矛盾）。案发当日诱骗女孩食用含花生酱的酒心巧克力（f精密预谋），当女孩哮喘发作使用被调换的吸入器时，过敏反应加剧。继母伪装成安抚动作实施短暂窒息（b成年女性），故意留下破损布偶熊制造孩童争执假象。连帽衫是继母参加学校义卖活动的统一服装，药物残留匹配其烘焙用的花生粉原料，巧克力上的齿痕与继母隐形牙套特征吻合。</p>
+            <button id="next-level-3" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded shadow-md mt-6">下一关</button>
+        </div>
+    </div>
+    <!-- 关卡四 -->
+    <div id="level-4" class="container mx-auto p-8 hidden">
+        <a href="#main-menu" class="text-blue-500 hover:underline hover:text-blue-600"><i class="fa-solid fa-arrow-left mr-2"></i>返回</a>
+        <h2 class="text-3xl font-bold text-gray-800 mb-6">关卡四</h2>
+        <p class="text-lg text-gray-600 mb-4">谜面：
+遗体1：高度腐烂，有大量虫卵寄生于躯骸中，部分躯干已白骨化
+遗体2：四肢屈曲,皮肤苍白，尸斑呈鲜红色，面部带微笑状
+遗体3：瞳孔放大，眼睛粘膜和耳朵内有明显出血症状
+遗体4：皮肤溃烂，头发全掉，内脏有大量溶解和出血现象</p>
+        <p class="text-lg text-gray-600 mb-4">问题：请匹配以上四具遗体可能发现的地点:A.湖泊 B.森林 C.雪山 D.医院</p>
+        <input type="text" id="answer-4" class="border border-gray-300 p-3 mb-4 rounded w-full" placeholder="输入答案">
+        <button id="submit-4" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded shadow-md">提交答案</button>
+        <div id="popup-4" class="popup">
+            <p id="popup-message-4" class="text-lg text-gray-800"></p>
+        </div>
+        <div id="answer-reveal-4" class="hidden mt-8">
+            <p class="text-lg text-gray-600">答案揭晓：1:遗体高度腐败，白骨化说明所处环境微生物种类丰富多样，是森林中土壤可能性极高;
+2:皮肤苍白，是血液回流人体核心保暖的特征，面带微笑状是冷死的标志性特征;
+3:眼睛耳朵有出血，更大可能性是因为水压破坏了黏膜等器官导致，是溺死的标志性特征;
+4:内脏溶解出血和掉头发是人体修复功能和 DNA严重受损的特征，人体已丧失了修复能力，为大范围遭到分子层面的破坏造成，更大可能性是遭遇核辐射，死前在医院接受治疗。</p>
+            <button id="next-level-4" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded shadow-md mt-6">下一关</button>
+        </div>
+    </div>
+    <!-- 关卡五 -->
+    <div id="level-5" class="container mx-auto p-8 hidden">
+        <a href="#main-menu" class="text-blue-500 hover:underline hover:text-blue-600"><i class="fa-solid fa-arrow-left mr-2"></i>返回</a>
+        <h2 class="text-3xl font-bold text-gray-800 mb-6">关卡五</h2>
+        <p class="text-lg text-gray-600 mb-4">谜面：
+1978-1995年间，某国多地发生16起自制邮寄炸弹袭击事件。造成大学教授、航空公司高管、和生物科技公司高层员工死亡和重伤。炸弹设计精妙且伪装成日常包裹，尚未留下任何 DNA或指纹。除媒体收到一本《工业社会及其未来》自称炸弹客邮寄书籍，警方调查无发现任何有效线索。</p>
+        <p class="text-lg text-gray-600 mb-4">问题：
+1、凶手受教育程度
+a、本科
+b、硕士/以上
+
+2、凶手动机
+a、私人恩怨b、政治动机
+C、理念冲突
+
+3、凶手居住地
+a、某国首都
+b、房车
+c、无固定地点
+d、郊区/隐居</p>
+        <input type="text" id="answer-5" class="border border-gray-300 p-3 mb-4 rounded w-full" placeholder="输入答案">
+        <button id="submit-5" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded shadow-md">提交答案</button>
+        <div id="popup-5" class="popup">
+            <p id="popup-message-5" class="text-lg text-gray-800"></p>
+        </div>
+        <div id="answer-reveal-5" class="hidden mt-8">
+            <p class="text-lg text-gray-600">答案揭晓：排除职业背景(警方排查)，本科难以独立完成制作炸弹、购置或整合原材料。
+凶手袭击的均是现代文明和推动现代科技发展的核心人物，结合邮寄书籍推断凶手渴望自身理念被关注，有强烈反科技，反现代文明的偏执倾向，自认为为防止科技毁灭人类而战斗;结合第二点凶手强烈反现代科技文明倾向，凶手更可能居住于远离水电的郊区。
+(故事原型:百西奥多卡钦斯基 ，美国天才炸弹客）</p>
+            <button id="next-level-5" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded shadow-md mt-6">下一关</button>
+        </div>
+    </div>
+    <!-- 关卡六 -->
+    <div id="level-6" class="container mx-auto p-8 hidden">
+        <a href="#main-menu" class="text-blue-500 hover:underline hover:text-blue-600"><i class="fa-solid fa-arrow-left mr-2"></i>返回</a>
+        <h2 class="text-3xl font-bold text-gray-800 mb-6">关卡六</h2>
+        <p class="text-lg text-gray-600 mb-4">谜面：
+某国度规则
+a规则一:当防空警报响起时，请视情况马上躲到避难所地下层直到危险解除;
+b规则二:当防空警报响起时，请视情况马上跑至楼顶静候危险解除回到地面;
+c规则三:请外来者不要!不要!在未经许可下接近该国人民;
+d规则四:外来者仅可与该国度的“神明大人“接触和交谈;
+e规则五:请不要踩踏或擦拭地面和人身上的液体;
+f规则六:每周将会定期举行祭祀仪式，祭祀后“神明大人"会将国度地面和人身上的液体重新补充;
+g规则七:当国民邀请外来者去参观祭祀厅时，请外来者忽略这个请求;
+h规则八:禁止在公众场合和未经“神明大人"允许下随便发出声音;
+i规则九:该国人民离开该国度后无法长久生存，请外来者不要擅自带离岛民;
+已知某国度规则如上，但其中一条的存在明显不合理与已知事实违背(通俗理解即该规则或行为无法实现或不具有意义/与已知规则存在明显冲突)，请推理是哪一条?</p>
+        <input type="text" id="answer-6" class="border border-gray-300 p-3 mb-4 rounded w-full" placeholder="输入答案">
+        <button id="submit-6" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded shadow-md">提交答案</button>
+        <div id="popup-6" class="popup">
+            <p id="popup-message-6" class="text-lg text-gray-800"></p>
+        </div>
+        <div id="answer-reveal-6" class="hidden mt-8">
+            <p class="text-lg text-gray-600">答案揭晓：规则一和规则二并不相悖，上高楼和下地下避难所面对的可能是不相同的灾难如海啸和核辐射。规则五和规则六说明了液体对国民生存的必要性，规则九辅证国民没有该液体无法生存过久。结合规则三四和八推断，外来人不能接近是因为没有浸润液体导致的或接近会导致国民的惊恐死亡或神明大人的权威失效，推断变格设定为该国居民眼里只能看见神明大人所制造的液体，对其他世界和物体眼睛均无法看见(没有神明大人提供液体情况下。因此规则七无法成立邀请行为。</p>
+            <button id="next-level-6" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded shadow-md mt-6">下一关</button>
+        </div>
+    </div>
+    <!-- 关卡七 -->
+    <div id="level-7" class="container mx-auto p-8 hidden">
+        <a href="#main-menu" class="text-blue-500 hover:underline hover:text-blue-600"><i class="fa-solid fa-arrow-left mr-2"></i>返回</a>
+        <h2 class="text-3xl font-bold text-gray-800 mb-6">关卡七</h2>
+        <p class="text-lg text-gray-600 mb-4">谜面：
+1号:嘴唇呈樱桃色，双眼球微微突出
+2号：口边有呕吐物和轻微失禁
+3号：脱发，厌食，肌肉萎缩，意识障碍伴随多器官衰竭
+4号：抽搐，肝肿大，肝肾受损伴随多器官衰竭</p>
+        <p class="text-lg text-gray-600 mb-4">问题：请匹配以上四人可能发生的中毒地点a、农场 b、家中 c、酒吧 d、研究所</p>
+        <input type="text" id="answer-7" class="border border-gray-300 p-3 mb-4 rounded w-full" placeholder="输入答案">
+        <button id="submit-7" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded shadow-md">提交答案</button>
+        <div id="popup-7" class="popup">
+            <p id="popup-message-7" class="text-lg text-gray-800"></p>
+        </div>
+        <div id="answer-reveal-7" class="hidden mt-8">
+            <p class="text-lg text-gray-600">答案揭晓：1号的特征是典型的一氧化碳中毒，在密闭环境中烧炭会产生高浓度一氧化碳致命，因此可能是家里;2号是喝多了酒精中毒的表现;即使长期喝酒也不会导致多器官衰竭因此酒吧匹配
+3号脱发，肌肉萎缩和意识障碍是是放射性元素导致的症状，可参考铊中毒案件;
+4号是农药中毒表现(如磷化铝)，农场等地方可能用于熏蒸粮食除虫</p>
+            <button id="next-level-7" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded shadow-md mt-6">下一关</button>
+        </div>
+    </div>
+    <!-- 关卡八 -->
+    <div id="level-8" class="container mx-auto p-8 hidden">
+        <a href="#main-menu" class="text-blue-500 hover:underline hover:text-blue-600"><i class="fa-solid fa-arrow-left mr-2"></i>返回</a>
+        <h2 class="text-3xl font-bold text-gray-800 mb-6">关卡八</h2>
+        <p class="text-lg text-gray-600 mb-4">谜面：</p>
+        <img src="level8.jpg" alt="案件图片" class="mb-4">
+        <p class="text-lg text-gray-600 mb-4">问题：根据图片请推断:
+1、地点:a工作室
+b公寓
+2、性质
+a自杀
+b他杀</p>
+        <input type="text" id="answer-8" class="border border-gray-300 p-3 mb-4 rounded w-full" placeholder="输入答案">
+        <button id="submit-8" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded shadow-md">提交答案</button>
+        <div id="popup-8" class="popup">
+            <p id="popup-message-8" class="text-lg text-gray-800"></p>
+        </div>
+        <div id="answer-reveal-8" class="hidden mt-8">
+            <p class="text-lg text-gray-600">答案揭晓：死者穿着随意，环境中桌子和摆设位置宽度不满足工作要求，垃圾桶垃圾较多，为私人公寓;
+受害人为左撇子(抽烟的位置可乐以及台灯的摆放位置)，所以不可能右手开枪，且倒下位置角度和血痕不对应;血痕的高度为人体中部，结合烟灰缸烟头较多垃圾桶内也有可乐酒瓶说明凶徒曾逗留坐着且与受害人一起抽烟喝可乐，且在受害人坐着过程开枪。</p>
+        </div>
+    </div>
+    <script>
+        document.getElementById('start-game').addEventListener('click', function () {
+            document.getElementById('main-menu').classList.add('hidden');
+            document.getElementById('level-1').classList.remove('hidden');
+            const audio = document.getElementById('background-music');
+            audio.play().catch(() => {
+                console.log('自动播放音乐失败，可能需要用户交互');
+            });
+        });
+
+        document.getElementById('submit-1').addEventListener('click', function () {
+            const answer = document.getElementById('answer-1').value.toLowerCase();
+            const correctAnswer = 'acfjklm';
+            const popup = document.getElementById('popup-1');
+            const popupMessage = document.getElementById('popup-message-1');
+            if (answer === correctAnswer) {
+                popupMessage.textContent = '维克托：不愧是你！';
+                popup.style.display = 'block';
+                setTimeout(() => {
+                    popup.style.display = 'none';
+                    document.getElementById('answer-reveal-1').classList.remove('hidden');
+                }, 4000);
+            } else {
+                popupMessage.textContent = '维克托：再想想哦';
+                popup.style.display = 'block';
+                setTimeout(() => {
+                    popup.style.display = 'none';
+                }, 4000);
+            }
+        });
+
+        document.getElementById('next-level-1').addEventListener('click', function () {
+            document.getElementById('level-1').classList.add('hidden');
+            document.getElementById('level-2').classList.remove('hidden');
+        });
+
+        document.getElementById('submit-2').addEventListener('click', function () {
+            const answer = document.getElementById('answer-2').value.toLowerCase();
+            const correctAnswer = 'bceg';
+            const popup = document.getElementById('popup-2');
+            const popupMessage = document.getElementById('popup-message-2');
+            if (answer === correctAnswer) {
+                popupMessage.textContent = '维克托：不愧是你！';
+                popup.style.display = 'block';
+                setTimeout(() => {
+                    popup.style.display = 'none';
+                    document.getElementById('answer-reveal-2').classList.remove('hidden');
+                }, 4000);
+            } else {
+                popupMessage.textContent = '维克托：再想想哦';
+                popup.style.display = 'block';
+                setTimeout(() => {
+                    popup.style.display = 'none';
+                }, 4000);
+            }
+        });
+
+        document.getElementById('next-level-2').addEventListener('click', function () {
+            document.getElementById('level-2').classList.add('hidden');
+            document.getElementById('level-3').classList.remove('hidden');
+        });
+
+        document.getElementById('submit-3').addEventListener('click', function () {
+            const answer = document.getElementById('answer-3').value.toLowerCase();
+            const correctAnswer = 'bcfg';
+            const popup = document.getElementById('popup-3');
+            const popupMessage = document.getElementById('popup-message-3');
+            if (answer === correctAnswer) {
+                popupMessage.textContent = '维克托：不愧是你！';
+                popup.style.display = 'block';
+                setTimeout(() => {
+                    popup.style.display = 'none';
+                    document.getElementById('answer-reveal-3').classList.remove('hidden');
+                }, 4000);
+            } else {
+                popupMessage.textContent = '维克托：再想想哦';
+                popup.style.display = 'block';
+                setTimeout(() => {
+                    popup.style.display = 'none';
+                }, 4000);
+            }
+        });
+
+        document.getElementById('next-level-3').addEventListener('click', function () {
+            document.getElementById('level-3').classList.add('hidden');
+            document.getElementById('level-4').classList.remove('hidden');
+        });
+
+        document.getElementById('submit-4').addEventListener('click', function () {
+            const answer = document.getElementById('answer-4').value.toLowerCase();
+            const correctAnswer = 'bcad';
+            const popup = document.getElementById('popup-4');
+            const popupMessage = document.getElementById('popup-message-4');
+            if (answer === correctAnswer) {
+                popupMessage.textContent = '维克托：不愧是你！';
+                popup.style.display = 'block';
+                setTimeout(() => {
+                    popup.style.display = 'none';
+                    document.getElementById('answer-reveal-4').classList.remove('hidden');
+                }, 4000);
+            } else {
+                popupMessage.textContent = '维克托：再想想哦';
+                popup.style.display = 'block';
+                setTimeout(() => {
+                    popup.style.display = 'none';
+                }, 4000);
+            }
+        });
+
+        document.getElementById('next-level-4').addEventListener('click', function () {
+            document.getElementById('level-4').classList.add('hidden');
+            document.getElementById('level-5').classList.remove('hidden');
+        });
+
+        document.getElementById('submit-5').addEventListener('click', function () {
+            const answer = document.getElementById('answer-5').value.toLowerCase();
+            const correctAnswer = 'bcd';
+            const popup = document.getElementById('popup-5');
+            const popupMessage = document.getElementById('popup-message-5');
+            if (answer === correctAnswer) {
+                popupMessage.textContent = '维克托：不愧是你！';
+                popup.style.display = 'block';
+                setTimeout(() => {
+                    popup.style.display = 'none';
+                    document.getElementById('answer-reveal-5').classList.remove('hidden');
+                }, 4000);
+            } else {
+                popupMessage.textContent = '维克托：再想想哦';
+                popup.style.display = 'block';
+                setTimeout(() => {
+                    popup.style.display = 'none';
+                }, 4000);
+            }
+        });
+
+        document.getElementById('next-level-5').addEventListener('click', function () {
+            document.getElementById('level-5').classList.add('hidden');
+            document.getElementById('level-6').classList.remove('hidden');
+        });
+
+        document.getElementById('submit-6').addEventListener('click', function () {
+            const answer = document.getElementById('answer-6').value.toLowerCase();
+            const correctAnswer = 'g';
+            const popup = document.getElementById('popup-6');
+            const popupMessage = document.getElementById('popup-message-6');
+            if (answer === correctAnswer) {
+                popupMessage.textContent = '维克托：不愧是你！';
+                popup.style.display = 'block';
+                setTimeout(() => {
+                    popup.style.display = 'none';
+                    document.getElementById('answer-reveal-6').classList.remove('hidden');
+                }, 4000);
+            } else {
+                popupMessage.textContent = '维克托：再想想哦';
+                popup.style.display = 'block';
+                setTimeout(() => {
+                    popup.style.display = 'none';
+                }, 4000);
+            }
+        });
+
+        document.getElementById('next-level-6').addEventListener('click', function () {
+            document.getElementById('level-6').classList.add('hidden');
+            document.getElementById('level-7').classList.remove('hidden');
+        });
+
+        document.getElementById('submit-7').addEventListener('click', function () {
+            const answer = document.getElementById('answer-7').value.toLowerCase();
+            const correctAnswer = 'bcda';
+            const popup = document.getElementById('popup-7');
+            const popupMessage = document.getElementById('popup-message-7');
+            if (answer === correctAnswer) {
+                popupMessage.textContent = '维克托：不愧是你！';
+                popup.style.display = 'block';
+                setTimeout(() => {
+                    popup.style.display = 'none';
+                    document.getElementById('answer-reveal-7').classList.remove('hidden');
+                }, 4000);
+            } else {
+                popupMessage.textContent = '维克托：再想想哦';
+                popup.style.display = 'block';
+                setTimeout(() => {
+                    popup.style.display = 'none';
+                }, 4000);
+            }
+        });
+
+        document.getElementById('next-level-7').addEventListener('click', function () {
+            document.getElementById('level-7').classList.add('hidden');
+            document.getElementById('level-8').classList.remove('hidden');
+        });
+
+        document.getElementById('submit-8').addEventListener('click', function () {
+            const answer = document.getElementById('answer-8').value.toLowerCase();
+            const correctAnswer = 'bb';
+            const popup = document.getElementById('popup-8');
+            const popupMessage = document.getElementById('popup-message-8');
+            if (answer === correctAnswer) {
+                popupMessage.textContent = '维克托：不愧是你！';
+                popup.style.display = 'block';
+                setTimeout(() => {
+                    popup.style.display = 'none';
+                    document.getElementById('answer-reveal-8').classList.remove('hidden');
+                }, 4000);
+                // 显示新的弹窗
+                const finalPopup = document.createElement('div');
+                finalPopup.classList.add('popup');
+                const finalPopupMessage = document.createElement('p');
+                finalPopupMessage.classList.add('text-lg', 'text-gray-800');
+                finalPopupMessage.textContent = '维克托：我就知道你可以！good boy!';
+                finalPopup.appendChild(finalPopupMessage);
+                document.body.appendChild(finalPopup);
+                finalPopup.style.display = 'block';
+                setTimeout(() => {
+                    finalPopup.style.display = 'none';
+                }, 6000);
+            } else {
+                popupMessage.textContent = '维克托：再想想哦';
+                popup.style.display = 'block';
+                setTimeout(() => {
+                    popup.style.display = 'none';
+                }, 4000);
+            }
+        });
+    </script>
+</body>
+
+</html>
+    
